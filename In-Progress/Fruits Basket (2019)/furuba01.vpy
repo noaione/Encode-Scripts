@@ -9,15 +9,15 @@ from vsutil import iterate, get_y
 
 core.max_cache_size = 12555
 
-cr = nao.src(r'D:\VideoStuff\Furuba\Fruits Basket (2019) - 01 (CR 1080p).mkv', depth=16, trims=[29, 'last'])
-wkn = nao.src(r'D:\VideoStuff\Furuba\Fruits Basket 2019 [2019] [WEB-DL] [1080p] [RUS + JAP]\Fruits Basket (2019) - 01 (Wakanim-DL RUS 1080p).mkv', depth=16)
+cr = nao.src('Fruits Basket (2019) - 01 (CR 1080p).mkv', depth=16, trims=[29, 'last'])
+wkn = nao.src(r'.\Fruits Basket 2019 [2019] [WEB-DL] [1080p] [RUS + JAP]\Fruits Basket (2019) - 01 (Wakanim-DL RUS 1080p).mkv', depth=16)
 
 # CR Trim & WKN Frame replace
 
-pre = cr[0:1122]
-post = cr[1132:13951]
-post2 = cr[13962:-1]
-cr = pre+post+post2
+cr_pre = cr[0:1122]
+cr_mid = cr[1132:13951]
+cr_post2 = cr[13962:-1]
+cr = cr_pre + cr_mid + cr_post
 
 wkn = nao.sfr(wkn, 34119, '34117-34118') # n4ofunc.SimpleFrameReplace
 
