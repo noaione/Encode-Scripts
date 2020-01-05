@@ -8,3 +8,5 @@
 *.d2v
 
 _Not_Important
+.vscode
+__pycache__
