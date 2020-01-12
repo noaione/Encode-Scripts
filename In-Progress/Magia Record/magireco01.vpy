@@ -1,13 +1,10 @@
 import vapoursynth as vs
 from vapoursynth import core
 import fvsfunc as fvf
-import havsfunc as haf
 import kagefunc as kgf
 import n4ofunc as nao
-from importlib import reload
-reload(nao)
 import vsTAAmbk as taa
-from vsutil import insert_clip, get_y, iterate
+from vsutil import get_y, iterate
 
 core.max_cache_size = 8192
 
@@ -54,13 +51,12 @@ src = fvf.rfs(src, src_dialog, "[0 4361] [18154 24476] [30457 30594] [31652 3394
 
 # Filter
 
-sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2)
+sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2).std.Invert()
 normal_deband = core.f3kdb.Deband(src, 15, 80, 75, 75, 25, 0, output_depth=16)
 
 vid = core.std.MaskedMerge(src, normal_deband, sobel_edge)
-vid = haf.HQDeringmod(src, mrad=1, msmooth=3, thr=8.0, mthr=60)
 vid = nao.adaptive_smdegrain(vid, luma_scaling=10, iter_edge=1, thSAD=100, thSADC=80)
-vid = kgf.adaptive_grain(vid, 1.5, luma_scaling=20)
+vid = kgf.adaptive_grain(vid, 0.35, luma_scaling=20)
 vid = fvf.Depth(vid, 10)
 
 vid.set_output()
