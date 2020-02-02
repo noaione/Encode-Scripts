@@ -25,8 +25,18 @@ src_ex2 = nao.rapplym(src, src_amz, "masks/03")
 
 src = fvf.rfs(src, src_ex2, "[5966 6003] [16381 16427]")
 
+exm2 = kgf.squaremask(src_wkn, 500, 80, 780, 560)
+src_ex3 = core.std.MaskedMerge(src, src_amz, exm2)
+
+src = fvf.rfs(src, src_ex3, "[15656 15782]")
+
+exm3 = kgf.squaremask(src_wkn, 580, 60, 60, 900)
+src_ex4 = core.std.MaskedMerge(src, src_amz, exm3)
+
+src = fvf.rfs(src, src_ex4, "[33325 33443]")
+
 #stacked1 = core.std.StackVertical([src_wkn, src_amz])
-#stacked2 = core.std.StackVertical([get_y(src), src_mask1])
+#stacked2 = core.std.StackVertical([get_y(src_ex4), exm3])
 #stackstack = core.std.StackHorizontal([get_y(stacked1), stacked2]).resize.Bicubic(1280, 720)
 
 sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2).std.Invert()
