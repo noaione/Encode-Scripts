@@ -30,8 +30,8 @@ def dither_down(clip: vs.VideoNode) -> vs.VideoNode:
     return depth(clip, 10).std.Limiter(16 << 2, [235 << 2, 240 << 2], [0, 1, 2])
 
 
-def credit_mask(source: vs.VideoNode, replace: vs.VideoNode, ranges: List[int]):
-    clipped_source = source[ranges[0]:ranges[1] + 1]
+def credit_mask(reference: vs.VideoNode, replace: vs.VideoNode, ranges: List[int]):
+    clipped_source = reference[ranges[0]:ranges[1] + 1]
     mask_data = lvf.hardsub_mask(clipped_source, replace, expand=10, inflate=4)
     return mask_data
 
@@ -42,11 +42,10 @@ def splice_credit(ref: vs.VideoNode, nc: vs.VideoNode, ranges: List[int]):
     return ref[:ranges[0]] + nc + ref[ranges[1] + 1:]
 
 
-
 def replace_back_credit(filtered: vs.VideoNode, reference: vs.VideoNode, ranges: List[int]):
     filt_part = filtered[ranges[0]:ranges[1] + 1]
     ref_part = reference[ranges[0]:ranges[1] + 1]
-    masking = credit_mask(ref_part, filt_part, ranges)
+    masking = credit_mask(reference, filt_part, ranges)
     masked = core.std.MaskedMerge(filt_part, ref_part, masking)
     return filtered[:ranges[0]] + masked + filtered[ranges[1] + 1:]
 
@@ -103,7 +102,7 @@ def filterchain():
 
 if __name__ == "__main__":
     config = RunnerConfig(
-        X265(CURRENT_DIR / "_settings.ini").run_enc(dither_down(filterchain()), source),
+        X265(CURRENT_DIR / "_settings.ini"),
         a_extracters=FFmpegAudioExtracter(source, track_in=1, track_out=1),
         a_cutters=EztrimCutter(source, track=1),
         a_encoders=OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=192, use_ffmpeg=False),
