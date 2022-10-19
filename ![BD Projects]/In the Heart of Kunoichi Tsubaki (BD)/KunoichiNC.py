@@ -5,7 +5,7 @@ import lvsfunc as lvf
 import n4ofunc as nao
 import vapoursynth as vs
 from vapoursynth import core
-from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, FlacCompressionLevel, FlacEncoder, OpusEncoder, PresetBD, RunnerConfig, SelfRunner, VPath
+from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, FlacCompressionLevel, FlacEncoder, OpusEncoder, PresetBD, PresetFLAC, PresetOpus, RunnerConfig, SelfRunner, VPath
 from vardefunc import AddGrain, Graigasm
 from vsaa import Eedi3SR, transpose_aa
 from vsdehalo import fine_dehalo
@@ -14,9 +14,9 @@ from vstools import depth, get_y, iterate
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source_ncop = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD])
-source_nced1 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD])
-source_nced2 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD])
+source_ncop = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
+source_nced1 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
+source_nced2 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
 source_ncop.name_file_final = VPath(CURRENT_DIR / "KunoichiNCOP")
 source_nced1.name_file_final = VPath(CURRENT_DIR / "KunoichiNCED1")
 source_nced2.name_file_final = VPath(CURRENT_DIR / "KunoichiNCED2")
