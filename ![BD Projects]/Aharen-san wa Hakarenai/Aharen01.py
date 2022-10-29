@@ -14,7 +14,7 @@ CURRENT_FILE = VPath(__file__)
 
 source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00000.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus])
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
-source.name_file_final = VPath(CURRENT_DIR / f"{CURRENT_FILE.stem}.mkv")
+source.name_file_final = VPath(CURRENT_DIR / f"{CURRENT_FILE.stem}_premux.mp4")
 source.set_name_clip_output_ext(".265")
 
 
@@ -57,6 +57,7 @@ class FFMPegMatroska(MatroskaFile):
         cmds: list[str] = []
         for track in self._tracks:
             cmds.extend(["-i", track.path.to_str()])
+        cmds.extend(["-c", "copy"])
         cmds.append(self._output.to_str())
         return cmds
 
