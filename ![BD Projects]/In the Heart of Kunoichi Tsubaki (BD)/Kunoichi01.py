@@ -5,20 +5,22 @@ import lvsfunc as lvf
 import n4ofunc as nao
 import vapoursynth as vs
 from vapoursynth import core
-from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, FlacCompressionLevel, FlacEncoder, OpusEncoder, PresetBD, PresetOpus
+from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, FlacCompressionLevel, FlacEncoder, OpusEncoder, PresetBD, PresetOpus, RunnerConfig, SelfRunner, VPath
 from vardefunc import AddGrain, Graigasm
 from vsaa import Eedi3SR, transpose_aa
 from vsdehalo import fine_dehalo
 from vstools import depth, get_y, iterate
 
 CURRENT_DIR = Path(__file__).absolute().parent
-
+CURRENT_FILE = VPath(__file__)
 
 source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00005.m2ts", trims_or_dfs=[(0, -26)], preset=[PresetBD, PresetOpus])
 source_nced = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -26)], preset=[PresetBD])
+source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
+source.set_name_clip_output_ext(".265")
 
 RANGES = {
-    "ED": [30903, 33060]
+    "ED": [30903, 32973]  # 33060
 }
 
 
@@ -27,27 +29,42 @@ def dither_down(clip: vs.VideoNode) -> vs.VideoNode:
     return depth(clip, 10).std.Limiter(16 << 2, [235 << 2, 240 << 2], [0, 1, 2])
 
 
-def credit_mask(source: vs.VideoNode, replace: vs.VideoNode, ranges: List[int]):
-    clipped_source = source[ranges[0]:ranges[1] + 1]
+def credit_mask(reference: vs.VideoNode, replace: vs.VideoNode, ranges: List[int]):
+    clipped_source = reference[ranges[0]:ranges[1] + 1]
     mask_data = lvf.hardsub_mask(clipped_source, replace, expand=10, inflate=4)
     return mask_data
 
 
+def splice_credit(ref: vs.VideoNode, nc: vs.VideoNode, ranges: List[int]):
+    if nc.format.bits_per_sample != ref.format.bits_per_sample:
+        nc = depth(nc, ref.format.bits_per_sample)
+    total_l = ranges[1] - ranges[0]
+    return ref[:ranges[0]] + nc[:total_l + 1] + ref[ranges[1] + 1:]
+
+
+def replace_back_credit(filtered: vs.VideoNode, reference: vs.VideoNode, ranges: List[int]):
+    filt_part = filtered[ranges[0]:ranges[1] + 1]
+    ref_part = reference[ranges[0]:ranges[1] + 1]
+    masking = credit_mask(reference, filt_part, ranges)
+    masked = core.std.MaskedMerge(filt_part, ref_part, masking)
+    return filtered[:ranges[0]] + masked + filtered[ranges[1] + 1:]
+
+
 def filterchain():
-    src_main = depth(source.clip_cut, 16)
-
-    src_nced = depth(source_nced.clip_cut, 16)
     ED = RANGES["ED"]
-    src = src_main[:ED[0]] + src_nced + src_main[ED[1] + 1:]
 
-    # weak? AA
-    filt_aa = transpose_aa(clip=src, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
+    src_main = depth(source.clip_cut, 16)
+    src_nced = depth(source_nced.clip_cut, 16)
+    src = splice_credit(src_main, src_nced, ED)
 
     # dehalo
-    filt_dehalo = fine_dehalo(filt_aa, rx=4)
+    filt_dehalo_bf = fine_dehalo(src, rx=2, brightstr=1.2)
+
+    # weak AA?
+    filt_aa = transpose_aa(clip=filt_dehalo_bf, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
 
     # medium degrain
-    filt_degrain = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=60, thSADC=0, tr=2)
+    filt_degrain = nao.adaptive_smdegrain(filt_aa, iter_edge=1, thSAD=60, thSADC=0, tr=2)
 
     # adaptive deband (without fucking up edge)
     sobel_edge = iterate(core.std.Sobel(get_y(filt_degrain)), core.std.Inflate, 2)
@@ -60,7 +77,7 @@ def filterchain():
     filt_deband = core.std.MaskedMerge(filt_degrain, filt_deband_lite, adaptmask_light)
     filt_deband = core.std.MaskedMerge(filt_deband, filt_deband_dark, adaptmask_dark)
 
-    # who loves grain?
+    # who loves grain? (stolen from Light's Yuru Camp S2 encode)
     filt_grain = Graigasm(
         thrs=[x << 8 for x in (32, 80, 128, 176)],
         strengths=[(0.25, 0.0), (0.20, 0.0), (0.15, 0.0), (0.0, 0.0)],
@@ -73,23 +90,22 @@ def filterchain():
         ]).graining(filt_deband)
 
     # replace back the credits (maybe I should use rfs?)
-    ed_parts = filt_grain[ED[0]:ED[1] + 1]
-    ed_src_parts = src_main[ED[0]:ED[1] + 1]
-    ed_mask = credit_mask(src_main, ed_parts, ED)
-    ed_remasked = core.std.MaskedMerge(ed_parts, ed_src_parts, ed_mask)
-    filt_final = filt_grain[:ED[0]] + ed_remasked + filt_grain[ED[1] + 1:]
+    filt_final = replace_back_credit(filt_grain, src_main, ED)
 
     return filt_final
 
 
 
 if __name__ == "__main__":
-    FILTER = filterchain()
-    X265(CURRENT_DIR / "_settings.ini").run_enc(dither_down(FILTER), source)
-    FFmpegAudioExtracter(source, track_in=1, track_out=1).run()
-    EztrimCutter(source, track=1).run()
+    config = RunnerConfig(
+        X265(CURRENT_DIR / "_settings.ini").run_enc(dither_down(filterchain()), source),
+        a_extracters=FFmpegAudioExtracter(source, track_in=1, track_out=1),
+        a_cutters=EztrimCutter(source, track=1),
+        a_encoders=OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=192, use_ffmpeg=False),
+    )
+
+    SelfRunner(dither_down(filterchain()), source, config).run()
     # manual convert later
-    # OpusEncoder(source, track=1, mode=BitrateMode.CVBR, bitrate=192, use_ffmpeg=False).run()
     # FlacEncoder(source, track=1, level=FlacCompressionLevel.VARDOU).run()
 else:
     filterchain().set_output(0)

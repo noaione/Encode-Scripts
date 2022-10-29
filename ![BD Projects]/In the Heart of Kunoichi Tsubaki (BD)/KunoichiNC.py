@@ -17,9 +17,9 @@ CURRENT_FILE = VPath(__file__)
 source_ncop = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
 source_nced1 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
 source_nced2 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
-source_ncop.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCOP")
-source_nced1.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED1")
-source_nced2.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED2")
+source_ncop.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCOPv2")
+source_nced1.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED1v2")
+source_nced2.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED2v2")
 source_ncop.set_name_clip_output_ext(".265")
 source_nced1.set_name_clip_output_ext(".265")
 source_nced2.set_name_clip_output_ext(".265")
@@ -53,14 +53,15 @@ def replace_back_credit(filtered: vs.VideoNode, reference: vs.VideoNode, ranges:
 def filterchain(source: FileInfo):
     # working depth
     src = depth(source.clip_cut, 16)
-    # weak AA
-    filt_aa = transpose_aa(clip=src, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
 
     # dehalo
-    filt_dehalo = fine_dehalo(filt_aa, rx=4)
+    filt_dehalo_bf = fine_dehalo(src, rx=2, brightstr=1.2)
+
+    # weak? AA
+    filt_aa = transpose_aa(clip=filt_dehalo_bf, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
 
     # medium degrain
-    filt_degrain = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=60, thSADC=0, tr=2)
+    filt_degrain = nao.adaptive_smdegrain(filt_aa, iter_edge=1, thSAD=60, thSADC=0, tr=2)
 
     # adaptive deband (without fucking up edge)
     sobel_edge = iterate(core.std.Sobel(get_y(filt_degrain)), core.std.Inflate, 2)
@@ -96,7 +97,7 @@ def run_source(target: FileInfo):
         a_cutters=EztrimCutter(target, track=1),
         a_encoders=[
             OpusEncoder(target, track=1, mode=BitrateMode.VBR, bitrate=192, use_ffmpeg=False),
-            FlacEncoder(target, track=1, level=FlacCompressionLevel.VARDOU),
+            # FlacEncoder(target, track=1, level=FlacCompressionLevel.VARDOU),
         ],
     )
 

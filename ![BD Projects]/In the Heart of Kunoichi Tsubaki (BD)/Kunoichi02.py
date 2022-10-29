@@ -18,10 +18,11 @@ source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00006.m2ts", trims_or_dfs=[(
 source_ncop = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -27)], preset=[PresetBD])
 source_nced = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -27)], preset=[PresetBD])
 source.name_file_final = VPath(CURRENT_DIR / CURRENT_FILE.stem)
+source.set_name_clip_output_ext(".265")
 
 RANGES = {
     "OP": [1320, 3476],
-    "ED": [31076, 33232]
+    "ED": [31076, 33147]  # 33232
 }
 
 
@@ -39,7 +40,8 @@ def credit_mask(reference: vs.VideoNode, replace: vs.VideoNode, ranges: List[int
 def splice_credit(ref: vs.VideoNode, nc: vs.VideoNode, ranges: List[int]):
     if nc.format.bits_per_sample != ref.format.bits_per_sample:
         nc = depth(nc, ref.format.bits_per_sample)
-    return ref[:ranges[0]] + nc + ref[ranges[1] + 1:]
+    total_l = ranges[1] - ranges[0]
+    return ref[:ranges[0]] + nc[:total_l + 1] + ref[ranges[1] + 1:]
 
 
 def replace_back_credit(filtered: vs.VideoNode, reference: vs.VideoNode, ranges: List[int]):
@@ -62,14 +64,14 @@ def filterchain():
     src = splice_credit(src_main, src_ncop, OP)
     src = splice_credit(src, src_nced, ED)
 
-    # weak AA
-    filt_aa = transpose_aa(clip=src, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
-
     # dehalo
-    filt_dehalo = fine_dehalo(filt_aa, rx=4)
+    filt_dehalo_bf = fine_dehalo(src, rx=2, brightstr=1.2)
+
+    # weak? AA
+    filt_aa = transpose_aa(clip=filt_dehalo_bf, aafunc=Eedi3SR(0.2, 0.25, 100, 2, 20))
 
     # medium degrain
-    filt_degrain = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=60, thSADC=0, tr=2)
+    filt_degrain = nao.adaptive_smdegrain(filt_aa, iter_edge=1, thSAD=60, thSADC=0, tr=2)
 
     # adaptive deband (without fucking up edge)
     sobel_edge = iterate(core.std.Sobel(get_y(filt_degrain)), core.std.Inflate, 2)
@@ -116,6 +118,6 @@ else:
     # source.clip_cut[RANGES["ED"][1]:].set_output(0)
     source.clip_cut.set_output(0)
     splice_credit(splice_credit(source.clip_cut, source_ncop.clip_cut, RANGES["OP"]), source_nced.clip_cut, RANGES["ED"]).set_output(1)
-    source_ncop.clip_cut.set_output(2)
-    source_nced.clip_cut.set_output(3)
+    # source_ncop.clip_cut.set_output(2)
+    # source_nced.clip_cut.set_output(3)
     # credit_mask(source.clip_cut, source_nced.clip_cut, RANGES["ED"]).set_output(2)
