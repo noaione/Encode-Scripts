@@ -4,9 +4,7 @@ import fvsfunc as fvf
 import havsfunc as haf
 import kagefunc as kgf
 import n4ofunc as nao
-import vsTAAmbk as taa
-from vsutil import insert_clip, get_y, iterate
-from nnedi3_rpow2 import *
+from vsutil import get_y, iterate
 
 core.max_cache_size = 12 * 1024
 
@@ -25,18 +23,18 @@ src_full = core.std.MaskedMerge(src_dialog, funi, src_mask2)
 src = fvf.rfs(src_dialog, src_full, "[10304 10336] [3238 3296] [29162 29214] [2795 2897]")
 
 native_mask = nao.simple_native_mask(src, 1600, 900, 1, 1).resize.Spline16(1920, 1080)
-descaled = nao.descale(src, 1600, 900, expandN=3)
-rescaled = nnedi3_rpow2(descaled, nns=4, correct_shift=True, width=1920, height=1080)
+descaled = nao.masked_descale(src, 1600, 900, expandN=3)
+rescaled = nao.upscale_nnedi3(descaled, nns=4, correct_shift=True, width=1920, height=1080)
 
 rescaled = core.std.MaskedMerge(rescaled, src, native_mask)
 src = fvf.rfs(rescaled, src, "[30297 32431]")
 
-#stacked1 = core.std.StackVertical([wkn, funi])
-#stacked2 = core.std.StackVertical([get_y(src), src_mask2])
-#stackstack = core.std.StackHorizontal([get_y(stacked1), stacked2]).resize.Bicubic(1280, 720)
+# stacked1 = core.std.StackVertical([wkn, funi])
+# stacked2 = core.std.StackVertical([get_y(src), src_mask2])
+# stackstack = core.std.StackHorizontal([get_y(stacked1), stacked2]).resize.Bicubic(1280, 720)
 
 sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2).std.Invert()
-normal_deband = core.f3kdb.Deband(src, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16)
+normal_deband = core.neo_f3kdb.Deband(src, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16)
 
 vid = core.std.MaskedMerge(src, normal_deband, sobel_edge)
 vid = nao.adaptive_smdegrain(vid, luma_scaling=10, iter_edge=1, thSAD=100, thSADC=80)

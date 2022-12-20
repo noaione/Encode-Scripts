@@ -32,12 +32,12 @@ src = insert_clip(src, src_full[5460:5532], 5460)
 
 src = nao.rapplym(src, funi, "masks/01")
 
-#stacked1 = core.std.StackVertical([get_y(wkn), get_y(funi)])
-#stacked2 = core.std.StackVertical([get_y(src), src_mask2])
-#stackstack = core.std.StackHorizontal([stacked1, stacked2])
+# stacked1 = core.std.StackVertical([get_y(wkn), get_y(funi)])
+# stacked2 = core.std.StackVertical([get_y(src), src_mask2])
+# stackstack = core.std.StackHorizontal([stacked1, stacked2])
 
 sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2).std.Invert()
-normal_deband = core.f3kdb.Deband(src, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16)
+normal_deband = core.neo_f3kdb.Deband(src, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16)
 
 vid = core.std.MaskedMerge(src, normal_deband, sobel_edge)
 vid = nao.adaptive_smdegrain(vid, luma_scaling=10, iter_edge=1, thSAD=100, thSADC=80)

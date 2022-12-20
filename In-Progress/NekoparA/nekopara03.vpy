@@ -35,12 +35,12 @@ src_ex4 = core.std.MaskedMerge(src, src_amz, exm3)
 
 src = fvf.rfs(src, src_ex4, "[33325 33443]")
 
-#stacked1 = core.std.StackVertical([src_wkn, src_amz])
-#stacked2 = core.std.StackVertical([get_y(src_ex4), exm3])
-#stackstack = core.std.StackHorizontal([get_y(stacked1), stacked2]).resize.Bicubic(1280, 720)
+# stacked1 = core.std.StackVertical([src_wkn, src_amz])
+# stacked2 = core.std.StackVertical([get_y(src_ex4), exm3])
+# stackstack = core.std.StackHorizontal([get_y(stacked1), stacked2]).resize.Bicubic(1280, 720)
 
 sobel_edge = iterate(core.std.Sobel(get_y(src)), core.std.Inflate, 2).std.Invert()
-normal_deband = core.f3kdb.Deband(src, 15, 80, 75, 75, 25, 0, output_depth=16)
+normal_deband = core.neo_f3kdb.Deband(src, 15, 80, 75, 75, 25, 0, output_depth=16)
 
 vid = core.std.MaskedMerge(src, normal_deband, sobel_edge)
 vid = nao.adaptive_smdegrain(vid, luma_scaling=10, iter_edge=1, thSAD=100, thSADC=80)
