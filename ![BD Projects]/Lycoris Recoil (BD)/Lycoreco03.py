@@ -1,19 +1,21 @@
 from pathlib import Path
-from typing import List
 
 import n4ofunc as nao
-from stgfunc import adaptive_grain
 import vapoursynth as vs
+from stgfunc import adaptive_grain
 from vapoursynth import core
-from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, OpusEncoder, PresetBD, PresetOpus, RunnerConfig, SelfRunner, VPath
-from vsaa import fine_aa, Znedi3SR
+from vardautomation import (X265, BitrateMode, EztrimCutter,
+                            FFmpegAudioExtracter, FileInfo, OpusEncoder,
+                            PresetBD, PresetOpus, RunnerConfig, SelfRunner,
+                            VPath)
+from vsaa import Znedi3SR, fine_aa
 from vsdehalo import fine_dehalo
 from vstools import depth, get_y, iterate
 
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00002.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus])
+source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00002.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus])  # noqa
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
 source.set_name_clip_output_ext(".265")
 
@@ -28,7 +30,7 @@ def dither_down(clip: vs.VideoNode) -> vs.VideoNode:
 
 
 def filterchain() -> vs.VideoNode:
-    ED = RANGES["ED"]
+    # ED = RANGES["ED"]
 
     # working depth
     src = depth(source.clip_cut, 16)
@@ -40,8 +42,12 @@ def filterchain() -> vs.VideoNode:
     filt_dehalo = fine_dehalo(filt_aa, rx=2, ry=1)
 
     # medium degrain
-    filt_degrain0 = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=80, thSADC=0, tr=2, RefineMotion=True)
-    filt_degrain = nao.adaptive_smdegrain(filt_degrain0, iter_edge=1, thSAD=60, thSADC=0, tr=2, area="dark", RefineMotion=True)
+    filt_degrain0 = nao.adaptive_smdegrain(
+        filt_dehalo, iter_edge=1, thSAD=80, thSADC=0, tr=2, RefineMotion=True
+    )
+    filt_degrain = nao.adaptive_smdegrain(
+        filt_degrain0, iter_edge=1, thSAD=60, thSADC=0, tr=2, area="dark", RefineMotion=True
+    )
 
     # adaptive deband (without fucking up edge)
     sobel_edge = iterate(core.std.Sobel(get_y(filt_degrain)), core.std.Inflate, 2)
@@ -69,5 +75,5 @@ if __name__ == "__main__":
     )
     SelfRunner(dither_down(filterchain()), source, config).run()
 else:
-    #filterchain().text.Text("Filtered").set_output(0)
+    # filterchain().text.Text("Filtered").set_output(0)
     source.clip_cut.text.Text("Source").set_output(1)

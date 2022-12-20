@@ -1,0 +1,25 @@
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | env
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+extend_skip = ["_dataset/**", "env/**", "venv/**", "./venv/**", ".pytest_cache/**", ".nox/**"]
+line_length = 110
+skip_gitignore = true
+

@@ -5,7 +5,20 @@ import lvsfunc as lvf
 import n4ofunc as nao
 import vapoursynth as vs
 from vapoursynth import core
-from vardautomation import X265, BitrateMode, EztrimCutter, FFmpegAudioExtracter, FileInfo, FlacCompressionLevel, FlacEncoder, OpusEncoder, PresetBD, PresetFLAC, PresetOpus, RunnerConfig, SelfRunner, VPath
+from vardautomation import (
+    X265,
+    BitrateMode,
+    EztrimCutter,
+    FFmpegAudioExtracter,
+    FileInfo,
+    OpusEncoder,
+    PresetBD,
+    PresetFLAC,
+    PresetOpus,
+    RunnerConfig,
+    SelfRunner,
+    VPath,
+)
 from vardefunc import AddGrain, Graigasm
 from vsaa import Eedi3SR, transpose_aa
 from vsdehalo import fine_dehalo
@@ -14,9 +27,15 @@ from vstools import depth, get_y, iterate
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source_ncop = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
-source_nced1 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
-source_nced2 = FileInfo(CURRENT_DIR / "BDMV"  / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC])
+source_ncop = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+)
+source_nced1 = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+)
+source_nced2 = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+)
 source_ncop.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCOPv2")
 source_nced1.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED1v2")
 source_nced2.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED2v2")
@@ -31,7 +50,7 @@ def dither_down(clip: vs.VideoNode) -> vs.VideoNode:
 
 
 def credit_mask(reference: vs.VideoNode, replace: vs.VideoNode, ranges: List[int]):
-    clipped_source = reference[ranges[0]:ranges[1] + 1]
+    clipped_source = reference[ranges[0] : ranges[1] + 1]
     mask_data = lvf.hardsub_mask(clipped_source, replace, expand=10, inflate=4)
     return mask_data
 
@@ -39,15 +58,15 @@ def credit_mask(reference: vs.VideoNode, replace: vs.VideoNode, ranges: List[int
 def splice_credit(ref: vs.VideoNode, nc: vs.VideoNode, ranges: List[int]):
     if nc.format.bits_per_sample != ref.format.bits_per_sample:
         nc = depth(nc, ref.format.bits_per_sample)
-    return ref[:ranges[0]] + nc + ref[ranges[1] + 1:]
+    return ref[: ranges[0]] + nc + ref[ranges[1] + 1 :]
 
 
 def replace_back_credit(filtered: vs.VideoNode, reference: vs.VideoNode, ranges: List[int]):
-    filt_part = filtered[ranges[0]:ranges[1] + 1]
-    ref_part = reference[ranges[0]:ranges[1] + 1]
+    filt_part = filtered[ranges[0] : ranges[1] + 1]
+    ref_part = reference[ranges[0] : ranges[1] + 1]
     masking = credit_mask(reference, filt_part, ranges)
     masked = core.std.MaskedMerge(filt_part, ref_part, masking)
-    return filtered[:ranges[0]] + masked + filtered[ranges[1] + 1:]
+    return filtered[: ranges[0]] + masked + filtered[ranges[1] + 1 :]
 
 
 def filterchain(source: FileInfo):
@@ -83,11 +102,11 @@ def filterchain(source: FileInfo):
         grainers=[
             AddGrain(seed=69420, constant=True),
             AddGrain(seed=69420, constant=False),
-            AddGrain(seed=69420, constant=False)
-        ]).graining(filt_deband)
+            AddGrain(seed=69420, constant=False),
+        ],
+    ).graining(filt_deband)
 
     return filt_grain
-
 
 
 def run_source(target: FileInfo):
@@ -102,7 +121,6 @@ def run_source(target: FileInfo):
     )
 
     SelfRunner(dither_down(filterchain(target)), target, config).run()
-
 
 
 if __name__ == "__main__":
