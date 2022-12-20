@@ -2,6 +2,8 @@
 *.mp4
 *.m2ts
 *.ts
+*.265
+*.264
 
 *.ffindex
 *.lwi
@@ -9,5 +11,18 @@
 
 _Not_Important
 .vscode
+.vspreview
 __pycache__
 BDMV/
+Source/
+Sources/
+*.exe
+
+# Audio
+*.opus
+*.wav
+*.flac
+*.aac
+*.m4a
+*.mp3
+*.eac3
