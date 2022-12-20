@@ -20,8 +20,8 @@ from vardautomation import (
     RunnerConfig,
     SelfRunner,
     Track,
-    VPath,
     VideoTrack,
+    VPath,
 )
 from vsdeband import Placebo, PlaceboDither
 from vskernels import Catrom, Kernel
