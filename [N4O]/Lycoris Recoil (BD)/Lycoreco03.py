@@ -24,7 +24,9 @@ from vstools import depth, get_y, iterate
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00002.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus])  # noqa
+source = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00002.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus]
+)  # noqa
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
 source.set_name_clip_output_ext(".265")
 
@@ -51,9 +53,7 @@ def filterchain() -> vs.VideoNode:
     filt_dehalo = fine_dehalo(filt_aa, rx=2, ry=1)
 
     # medium degrain
-    filt_degrain0 = nao.adaptive_smdegrain(
-        filt_dehalo, iter_edge=1, thSAD=80, thSADC=0, tr=2, RefineMotion=True
-    )
+    filt_degrain0 = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=80, thSADC=0, tr=2, RefineMotion=True)
     filt_degrain = nao.adaptive_smdegrain(
         filt_degrain0, iter_edge=1, thSAD=60, thSADC=0, tr=2, area="dark", RefineMotion=True
     )

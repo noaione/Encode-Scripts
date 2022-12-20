@@ -25,7 +25,7 @@ CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
 source = FileInfo(
-    CURRENT_DIR / "BDMV" / "Vol.1" / "00001.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus]
+    CURRENT_DIR / "BDMV" / "Vol.3" / "00000.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus]
 )  # noqa
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
 source.set_name_clip_output_ext(".265")
@@ -84,5 +84,5 @@ if __name__ == "__main__":
     )
     SelfRunner(dither_down(filterchain()), source, config).run()
 else:
-    filterchain().text.Text("Filtered").set_output(0)
+    # filterchain().text.Text("Filtered").set_output(0)
     source.clip_cut.text.Text("Source").set_output(1)
