@@ -4,11 +4,24 @@ import n4ofunc as nao
 import vapoursynth as vs
 from kagefunc import adaptive_grain
 from vapoursynth import core
-from vardautomation import (X265, BasicTool, BinaryPath, BitrateMode,
-                            EztrimCutter, FFmpegAudioExtracter, FileInfo,
-                            FlacCompressionLevel, FlacEncoder, MatroskaFile,
-                            OpusEncoder, PresetBD, PresetOpus, RunnerConfig,
-                            SelfRunner, VPath)
+from vardautomation import (
+    X265,
+    BasicTool,
+    BinaryPath,
+    BitrateMode,
+    EztrimCutter,
+    FFmpegAudioExtracter,
+    FileInfo,
+    FlacCompressionLevel,
+    FlacEncoder,
+    MatroskaFile,
+    OpusEncoder,
+    PresetBD,
+    PresetOpus,
+    RunnerConfig,
+    SelfRunner,
+    VPath,
+)
 from vardautomation.vpathlib import CleanupSet
 from vsaa import Eedi3SR, clamp_aa, transpose_aa, upscaled_sraa
 from vstools import depth, get_y, iterate

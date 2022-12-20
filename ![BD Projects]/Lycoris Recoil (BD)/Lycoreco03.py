@@ -4,10 +4,19 @@ import n4ofunc as nao
 import vapoursynth as vs
 from stgfunc import adaptive_grain
 from vapoursynth import core
-from vardautomation import (X265, BitrateMode, EztrimCutter,
-                            FFmpegAudioExtracter, FileInfo, OpusEncoder,
-                            PresetBD, PresetOpus, RunnerConfig, SelfRunner,
-                            VPath)
+from vardautomation import (
+    X265,
+    BitrateMode,
+    EztrimCutter,
+    FFmpegAudioExtracter,
+    FileInfo,
+    OpusEncoder,
+    PresetBD,
+    PresetOpus,
+    RunnerConfig,
+    SelfRunner,
+    VPath,
+)
 from vsaa import Znedi3SR, fine_aa
 from vsdehalo import fine_dehalo
 from vstools import depth, get_y, iterate

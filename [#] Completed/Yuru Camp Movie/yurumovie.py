@@ -5,8 +5,16 @@ import n4ofunc as nao
 import vapoursynth as vs
 from stgfunc import adaptive_grain
 from vapoursynth import core
-from vardautomation import (X265, FFmpegAudioExtracter, FileInfo, PresetEAC3,
-                            PresetWEB, RunnerConfig, SelfRunner, VPath)
+from vardautomation import (
+    X265,
+    FFmpegAudioExtracter,
+    FileInfo,
+    PresetEAC3,
+    PresetWEB,
+    RunnerConfig,
+    SelfRunner,
+    VPath,
+)
 from vsaa import Znedi3SR, Znedi3SS, clamp_aa, transpose_aa, upscaled_sraa
 from vsdeband.f3kdb import F3kdb
 from vsdehalo import fine_dehalo
@@ -17,14 +25,17 @@ CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
 VERSION = "v2"
-source_amzn = FileInfo(CURRENT_DIR / "Yuru Camp Movie - 1080p WEB H.264 -NanDesuKa (AMZN).mkv", preset=[PresetWEB, PresetEAC3])  # noqa
-source_cr = FileInfo(CURRENT_DIR / "Laid-Back Camp The Movie (2022) VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR).mkv", preset=[PresetWEB])  # noqa
+source_amzn = FileInfo(
+    CURRENT_DIR / "Yuru Camp Movie - 1080p WEB H.264 -NanDesuKa (AMZN).mkv", preset=[PresetWEB, PresetEAC3]
+)  # noqa
+source_cr = FileInfo(
+    CURRENT_DIR / "Laid-Back Camp The Movie (2022) VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR).mkv",
+    preset=[PresetWEB],
+)  # noqa
 source_cr.name_clip_output = VPath(CURRENT_DIR / (CURRENT_FILE.stem + VERSION))
 source_cr.set_name_clip_output_ext(".265")
 
-do_not_sharpen = [
-    (0, 368)
-]
+do_not_sharpen = [(0, 368)]
 
 
 def dither_down(clip: vs.VideoNode) -> vs.VideoNode:
@@ -45,11 +56,11 @@ def merge_source(show_mask: bool = False):
 
 def swap_frames(srca: vs.VideoNode, srcb: vs.VideoNode, frames: tuple[int, int]):
     sf, ef = frames
-    cut_b = srcb[sf:ef + 1]
+    cut_b = srcb[sf : ef + 1]
     if sf == 0:
-        return cut_b + srca[ef + 1:]
+        return cut_b + srca[ef + 1 :]
     elif ef == (srca.num_frames - 1):
-        return srca[:sf + 1] + cut_b
+        return srca[: sf + 1] + cut_b
     else:
         return srca[:sf] + cut_b + srca[ef:]
 
@@ -65,9 +76,7 @@ def filterchain(skip_resharp: bool = False):
     # line resharpening (will not restore stuff that got AA'd too much)
     if not skip_resharp:
         asharp_mask = SobelStd().edgemask(get_y(src)).std.Binarize(25 << 7).std.Convolution([1] * 9)
-        filt_asharp = core.asharp.ASharp(
-            filt_aa, t=0.5, d=1.5, hqbf=True
-        )
+        filt_asharp = core.asharp.ASharp(filt_aa, t=0.5, d=1.5, hqbf=True)
         filt_ldark_t = hvf.FastLineDarkenMOD(filt_asharp, strength=20, protection=24)
         filt_ldark = core.std.MaskedMerge(filt_aa, filt_ldark_t, asharp_mask)
         for frames in do_not_sharpen:
