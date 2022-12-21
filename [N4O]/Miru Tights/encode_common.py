@@ -139,6 +139,8 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
     output_final.rename(output_final_f)
     logger.info(f"Runner completed, final file saved to {output_final_f.name}")
     create_keyframes(output_final_f)
+    logger.info("Cleaning up work files...")
+    runner.work_files.clear()
 
 
 @overload
