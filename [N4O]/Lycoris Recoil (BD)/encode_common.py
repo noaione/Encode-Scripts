@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, overload
 
 import vapoursynth as vs
+from lvsfunc import find_scene_changes
 from vapoursynth import core
 from vardautomation import (
     X265,
@@ -59,9 +60,51 @@ def hash_file(file: Path | VPath):
     return ("%X" % (prev & 0xFFFFFFFF)).upper()
 
 
+def _premux_exist(output_name: str, extension: str = ".mkv"):
+    single_find = PREMUX_DIR / f"{output_name}_premux{extension}"
+    if single_find.exists():
+        return single_find
+    multi_find = list(PREMUX_DIR.glob(f"{output_name}_premux [*{extension}"))
+    if not multi_find:
+        return None
+    return multi_find[0]
+
+
+def create_keyframes(final: Path):
+    clip = core.lsmas.LWLibavSource(str(final))
+    keyframes = find_scene_changes(clip)
+
+    kf_file = final.with_name(f"{final.stem}_keyframes.txt")
+    print(f"Saving keyframes to {kf_file}")
+    with kf_file.open("w") as f:
+        f.write("# keyframe format v1\nfps 0\n")
+        for i in keyframes:
+            f.write(str(i) + "\n")
+
+    # cleanup LWI
+    cwd = Path.cwd()
+    print(f"Cleaning up LWI files in {cwd} and {CURRENT_DIR}")
+    for file in cwd.glob("*.lwi"):
+        if final.stem in file.stem:
+            file.unlink(missing_ok=True)
+
+    for file in CURRENT_DIR.glob("*.lwi"):
+        if final.stem in file.stem:
+            file.unlink(missing_ok=True)
+
+
 def start_encode(source: FileInfo, clip: vs.VideoNode):
     file_final = f"{source.name_clip_output.stem.lower()}_premux.mkv"
     output_final = PREMUX_DIR / file_final
+    actual_premux = _premux_exist(source.name_clip_output.stem)
+    if actual_premux is not None:
+        print(f"Premux file already exists: {actual_premux.name}")
+        kf_exist = _premux_exist(source.name_clip_output.stem, ".txt")
+        if kf_exist is not None:
+            print(f"Keyframes file already exists: {kf_exist.name}")
+            return
+        create_keyframes(actual_premux)
+        return
     mkv_tracks: list[Track] = [VideoTrack(source.name_clip_output, "Encoded by N4O | x265 Main10 L4", Lang.make("ja"))]
     if source.a_enc_cut is not None:
         mkv_tracks.append(AudioTrack(source.a_enc_cut.set_track(1), "OPUS 2.0 224kb/s", Lang.make("ja")))
@@ -84,7 +127,8 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
         logger.info("Downsampling to 10 bit")
         clip = dither_10bit(clip)
     logger.info("Starting runner...")
-    SelfRunner(clip, source, config).run()
+    runner = SelfRunner(clip, source, config)
+    runner.run()
     logger.info("Runner finished, hashing file...")
     file_hash = hash_file(output_final)
     logger.info(f"Hash: {file_hash}")
@@ -94,6 +138,9 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
     output_final_f = output_final.with_name(f"{output_final.stem} [{file_hash}].mkv")
     output_final.rename(output_final_f)
     logger.info(f"Runner completed, final file saved to {output_final_f.name}")
+    create_keyframes(output_final_f)
+    logger.info("Cleaning up work files...")
+    runner.work_files.clear()
 
 
 @overload
