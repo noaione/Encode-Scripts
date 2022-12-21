@@ -9,7 +9,7 @@ from vardautomation import VPath
 from vsscale import ssim_downsample
 from vstools import get_w, depth, insert_clip
 
-from encode_common import open_source, dlisr_upscale, deband_texmask, debandshit, start_encode
+from encode_common import open_source, dlisr_upscale, deband_texmask, start_encode
 
 
 def mean_deband(clip: vs.VideoNode, clip_mask: vs.VideoNode | None = None):
