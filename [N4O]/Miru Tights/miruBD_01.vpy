@@ -9,7 +9,17 @@ from vardautomation import VPath
 from vsscale import ssim_downsample
 from vstools import get_w, depth, insert_clip
 
-from encode_common import open_source, dlisr_upscale, deband_texmask, debandshit, start_encode
+from encode_common import open_source, dlisr_upscale, deband_texmask, start_encode
+
+
+def mean_deband(clip: vs.VideoNode, clip_mask: vs.VideoNode | None = None):
+    texmask = clip_mask or deband_texmask(clip, 1)
+    debanders = [
+        core.neo_f3kdb.Deband(clip, range=16, y=32, grainy=16, grainc=12),
+        core.neo_f3kdb.Deband(clip, range=16, y=28, cb=24, grainy=24, grainc=12),
+        core.placebo.Deband(clip, radius=10, threshold=4.5, iterations=2, grain=4),
+    ]
+    return core.std.MaskedMerge(core.average.Mean(debanders), clip, texmask)
 
 
 CURRENT_FILE = VPath(__file__)
@@ -44,18 +54,20 @@ desc_fin = core.std.MaskedMerge(upscale_back, src, dn_mask)
 fin_dh = fine_dehalo(desc_fin, rx=2.15, ry=2.25, darkstr=0.85, brightstr=1.75)
 # aggresive denoise
 texmask = deband_texmask(fin_dh, 1)
-degr_r = haf.SMDegrain(fin_dh, tr=2, thSAD=250, RefineMotion=True)
-degr = core.std.MaskedMerge(degr_r, fin_dh, texmask)
+# deband
+dbd_r = mean_deband(fin_dh, texmask)
+# aggresive denoise
+degr_r = haf.SMDegrain(dbd_r, tr=2, thSAD=250, RefineMotion=True)
+degr = core.std.MaskedMerge(degr_r, dbd_r, texmask)
 
 # deband
-dbd_r = debandshit(degr, clip_mask=texmask)
 
 # fin_ed = insert_clip(src, ed_dehalo, ED_CREDS_START)
 
 # end cards
 # pls dont fuck it up
 endfd = fine_dehalo(end_cards)
-flt_mix = insert_clip(dbd_r, insert=endfd, start_frame=END_CARDS_START)
+flt_mix = insert_clip(degr, insert=endfd, start_frame=END_CARDS_START)
 
 # grainset
 flt_grain = adaptive_grain(flt_mix, strength=0.3, luma_scaling=8)
