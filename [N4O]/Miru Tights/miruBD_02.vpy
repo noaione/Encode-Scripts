@@ -35,9 +35,6 @@ main_parts = src[:ED_CREDS_START]
 ed_parts = src[ED_CREDS_START : ED_CREDS_START + 1200]
 end_cards = src[END_CARDS_START:]
 
-texmask = deband_texmask(src, 1)
-deband_shit = debandshit(src, iterations=2, radius=8, thr=5.5, grains=0)
-
 # Rescale (also dehalo, and AA)
 dn_mask = nao.simple_native_mask(src, get_w(862), 862, iter_max=5, no_resize=True)
 desc_main = iaa.revert_upscale(
@@ -55,13 +52,12 @@ desc_fin = core.std.MaskedMerge(upscale_back, src, dn_mask)
 
 # extra dehalo
 fin_dh = fine_dehalo(desc_fin, rx=2.15, ry=2.25, darkstr=0.85, brightstr=1.75)
-# aggresive denoise
 texmask = deband_texmask(fin_dh, 1)
+# deband
 dbd_r = mean_deband(fin_dh, texmask)
+# aggresive denoise
 degr_r = haf.SMDegrain(dbd_r, tr=2, thSAD=250, RefineMotion=True)
 degr = core.std.MaskedMerge(degr_r, dbd_r, texmask)
-
-# deband
 
 # fin_ed = insert_clip(src, ed_dehalo, ED_CREDS_START)
 
