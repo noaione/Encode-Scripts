@@ -29,6 +29,8 @@ from vsmask.edge import MinMax
 from vstools import Matrix, depth, get_y, iterate
 
 CURRENT_DIR = VPath(__file__).absolute().parent
+PREMUX_DIR = CURRENT_DIR / "Premux"
+PREMUX_DIR.mkdir(exist_ok=True)
 logger = logging.getLogger("encode_common")
 
 
@@ -59,8 +61,7 @@ def hash_file(file: Path | VPath):
 
 def start_encode(source: FileInfo, clip: vs.VideoNode):
     file_final = f"{source.name_clip_output.stem.lower()}_premux.mkv"
-    output_final = CURRENT_DIR / "Premux" / file_final
-    output_final.mkdir(parents=True, exist_ok=True)
+    output_final = PREMUX_DIR / file_final
     mkv_tracks: list[Track] = [VideoTrack(source.name_clip_output, "Encoded by N4O | x265 Main10 L4", Lang.make("ja"))]
     if source.a_enc_cut is not None:
         mkv_tracks.append(AudioTrack(source.a_enc_cut.set_track(1), "OPUS 2.0 224kb/s", Lang.make("ja")))
