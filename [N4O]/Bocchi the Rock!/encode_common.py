@@ -5,6 +5,7 @@ from typing import Optional, overload
 
 import vapoursynth as vs
 from lvsfunc import find_scene_changes
+from mvsfunc import ToYUV
 from vapoursynth import core
 from vardautomation import (
     X265,
@@ -209,12 +210,12 @@ def texture_mask(clip: vs.VideoNode, range: int) -> vs.VideoNode:
     return masked
 
 
-def deband_texmask(clip: vs.VideoNode, rady: int = 2) -> vs.VideoNode:
+def deband_texmask(clip: vs.VideoNode, rady: int = 2, edge: int = 30, edge_dilate: int = 6) -> vs.VideoNode:
     clip_y = get_y(clip)
     tex_mask = texture_mask(clip_y, rady)
-    edge = core.std.Prewitt(clip_y).std.Binarize(30 << 7).std.Deflate().std.Inflate().morpho.Close(size=6)
-    edge = core.rgvs.RemoveGrain(edge, 17)
-    return core.std.Expr([tex_mask, edge], "x y +").rgvs.RemoveGrain(17)
+    edgem = core.std.Prewitt(clip_y).std.Binarize(edge << 7).std.Deflate().std.Inflate().morpho.Close(size=edge_dilate)
+    edgem = core.rgvs.RemoveGrain(edgem, 17)
+    return core.std.Expr([tex_mask, edgem], "x y +").rgvs.RemoveGrain(17)
 
 
 def debandshit(
@@ -263,3 +264,13 @@ def dlisr_upscale(clip: vs.VideoNode, scale: int, device_id: int = 0) -> vs.Vide
 
     sback = kernel.resample(sout, clip.format, matrix, matrix_in)
     return sback
+
+
+def create_img_mask(img_name: str, ref: vs.VideoNode, length: int = 1, inflate: int = 3):
+    img_path = CURRENT_DIR / "masks" / img_name
+    img_mask = core.imwri.Read(str(img_path))
+    img_mask = get_y(core.resize.Bicubic(img_mask, format=vs.YUV420P16, matrix=1))
+    img_mask = depth(img_mask, ref.format.bits_per_sample)
+    img_mask = core.std.AssumeFPS(img_mask, ref)
+    img_mask = iterate(img_mask, core.std.Inflate, inflate)
+    return img_mask * length
