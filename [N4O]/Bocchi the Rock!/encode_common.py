@@ -249,8 +249,8 @@ def dlisr_upscale(clip: vs.VideoNode, scale: int, device_id: int = 0) -> vs.Vide
     :param device_id: Device ID
     :type device_id: int
     """
-    if scale not in [2, 4, 6]:
-        raise ValueError(f"dlisr_scale: scale must be 2, 4 or 6, not {scale}")
+    if scale not in [2, 4, 8]:
+        raise ValueError(f"dlisr_upscale: scale must be 2, 4 or 8, not {scale}")
 
     matrix = Matrix.from_video(clip, False)
     kernel = Kernel.ensure_obj(Catrom)
