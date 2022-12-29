@@ -2,30 +2,48 @@ from pathlib import Path
 
 import n4ofunc as nao
 import vapoursynth as vs
-from vapoursynth import core
 from havsfunc import FineDehalo, SMDegrain
 from stgfunc import adaptive_grain
-from finedehalo import fine_dehalo
-from encode_common import open_source, deband_texmask, create_img_mask, start_encode
+from vapoursynth import core
 from vsaa import Znedi3SR, transpose_aa
-from vstools import depth, insert_clip, iterate
+from vstools import depth, insert_clip
+
+from encode_common import (
+    create_img_mask,
+    deband_texmask,
+    open_endcard,
+    open_source,
+    start_encode,
+)
 
 current_file = Path(__file__)
 
 source = open_source("00003.m2ts", "1", current_file, trims=(None, -26))
+source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
 src = depth(source.clip_cut, 16)
+ncop = depth(source_ncop.clip_cut, 16)
 
 # First num is the fade start
 # end num is before the next frame
-op_titles = (6237, 6302)
+op_titles = (6213, 6302)
+endcard_start =  33926
 
 # apply title mask
 optitle_dur = (op_titles[1] - op_titles[0]) + 1
 optitle_ref = src[op_titles[0]:op_titles[1] + 1]
+optitle_ncopref = ncop[2040:2130]
 optitle_mask = create_img_mask("bocchi01_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
-opfreeze_title = src[op_titles[0] - 1] * optitle_dur
-opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, opfreeze_title, optitle_mask)
+opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, optitle_ncopref, optitle_mask)
 src = insert_clip(src, opfreeze_titlemask, op_titles[0])
+
+# swap out the original endcard with a custom endcard
+# the card is made in Aegisub, then exported as PNG
+# after that it got slapped to a *close enough* background like the original
+# that are taken from next episode which are cleaned out and desaturated.
+# then I use premiere pro to make a lossless spinning animation because
+# i'm too stupid to do it in Aegisub and I hate math.
+src_endcard = open_endcard(2, src, src.num_frames - endcard_start)
+src = insert_clip(src, src_endcard, endcard_start)
 
 # light AA
 filt_aa = transpose_aa(src, Znedi3SR(4, 1))
@@ -51,5 +69,8 @@ filt_gg = adaptive_grain(filt_db, strength=0.22, luma_scaling=10, sharp=75, size
 if __name__ == "__main__":
     start_encode(source, filt_gg)
 else:
-    src.set_output(0)
-    filt_gg.set_output(1)
+    # ncop.set_output(0)
+    # ncop_credmask.set_output(1)
+    nao.debug_clip(src).set_output()
+    nao.debug_clip(source.clip_cut).set_output(1)
+    # filt_gg.set_output(1)

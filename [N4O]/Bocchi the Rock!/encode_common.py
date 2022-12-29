@@ -5,7 +5,6 @@ from typing import Optional, overload
 
 import vapoursynth as vs
 from lvsfunc import find_scene_changes
-from mvsfunc import ToYUV
 from vapoursynth import core
 from vardautomation import (
     X265,
@@ -52,6 +51,32 @@ def open_source(
     source.name_clip_output = VPath(CURRENT_DIR / output_file.stem)
     source.set_name_clip_output_ext(".265")
     return source
+
+
+def open_image(
+    path: Path | VPath, ref: vs.VideoNode
+) -> vs.VideoNode:
+    img_mask = core.imwri.Read(str(path))
+    img_mask = core.resize.Bicubic(img_mask, format=vs.YUV420P16, matrix=1)
+    img_mask = depth(img_mask, ref.format.bits_per_sample)
+    return core.std.AssumeFPS(img_mask, ref)
+
+
+def open_endcard(
+    episode: int, ref: vs.VideoNode, endcard_length: int = -1
+):
+    ppath = CURRENT_DIR / "Endcard" / f"Endcard_{episode:02d}.m2v"
+    clip = core.lsmas.LWLibavSource(str(ppath))
+    clip = depth(clip, ref.format.bits_per_sample)
+    if endcard_length != -1:
+        # If endcard_length is less than the actual length of the endcard, it will be trimmed
+        if endcard_length < clip.num_frames:
+            clip = clip[:endcard_length]
+        elif endcard_length > clip.num_frames:
+            ff_final = clip[-1]
+            ff_freeze = ff_final * (endcard_length - clip.num_frames)
+            clip = clip + ff_freeze
+    return clip
 
 
 def hash_file(file: Path | VPath):
@@ -106,7 +131,7 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
             return
         create_keyframes(actual_premux)
         return
-    mkv_tracks: list[Track] = [VideoTrack(source.name_clip_output, "Video diolah oleh N4O | x265 10bit", Lang.make("ja"))]
+    mkv_tracks: list[Track] = [VideoTrack(source.name_clip_output, "Video diolah oleh Suami Nijika-chan | x265 10bit", Lang.make("ja"))]
     if source.a_enc_cut is not None:
         mkv_tracks.append(AudioTrack(source.a_enc_cut.set_track(1), "Japanese OPUS 2.0", Lang.make("ja")))
     mkv_meta = MatroskaFile(output_final, mkv_tracks)
@@ -267,10 +292,7 @@ def dlisr_upscale(clip: vs.VideoNode, scale: int, device_id: int = 0) -> vs.Vide
 
 
 def create_img_mask(img_name: str, ref: vs.VideoNode, length: int = 1, inflate: int = 3):
-    img_path = CURRENT_DIR / "masks" / img_name
-    img_mask = core.imwri.Read(str(img_path))
-    img_mask = get_y(core.resize.Bicubic(img_mask, format=vs.YUV420P16, matrix=1))
-    img_mask = depth(img_mask, ref.format.bits_per_sample)
-    img_mask = core.std.AssumeFPS(img_mask, ref)
+    mask_path = CURRENT_DIR / "masks" / img_name
+    img_mask = open_image(mask_path, ref)
     img_mask = iterate(img_mask, core.std.Inflate, inflate)
     return img_mask * length
