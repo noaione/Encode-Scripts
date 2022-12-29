@@ -5,6 +5,7 @@ from typing import Optional, overload
 
 import vapoursynth as vs
 from lvsfunc import find_scene_changes
+from mvsfunc import ToYUV
 from vapoursynth import core
 from vardautomation import (
     X265,
@@ -57,6 +58,7 @@ def open_image(
     path: Path | VPath, ref: vs.VideoNode
 ) -> vs.VideoNode:
     img_mask = core.imwri.Read(str(path))
+    img_mask = ToYUV(img_mask)
     img_mask = core.resize.Bicubic(img_mask, format=vs.YUV420P16, matrix=1)
     img_mask = depth(img_mask, ref.format.bits_per_sample)
     return core.std.AssumeFPS(img_mask, ref)
@@ -294,5 +296,5 @@ def dlisr_upscale(clip: vs.VideoNode, scale: int, device_id: int = 0) -> vs.Vide
 def create_img_mask(img_name: str, ref: vs.VideoNode, length: int = 1, inflate: int = 3):
     mask_path = CURRENT_DIR / "masks" / img_name
     img_mask = open_image(mask_path, ref)
-    img_mask = iterate(img_mask, core.std.Inflate, inflate)
+    img_mask = iterate(get_y(img_mask), core.std.Inflate, inflate)
     return img_mask * length
