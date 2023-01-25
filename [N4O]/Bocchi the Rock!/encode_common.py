@@ -65,9 +65,10 @@ def open_image(
 
 
 def open_endcard(
-    episode: int, ref: vs.VideoNode, endcard_length: int = -1
+    episode: int, ref: vs.VideoNode, endcard_length: int = -1,
+    ext_fmt: str = "m2v"
 ):
-    ppath = CURRENT_DIR / "Endcard" / f"Endcard_{episode:02d}.m2v"
+    ppath = CURRENT_DIR / "Endcard" / f"Endcard_{episode:02d}.{ext_fmt}"
     clip = core.lsmas.LWLibavSource(str(ppath))
     clip = depth(clip, ref.format.bits_per_sample)
     if endcard_length != -1:
