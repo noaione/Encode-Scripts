@@ -1,10 +1,11 @@
 import logging
+import sys
 import zlib
 from pathlib import Path
 from typing import Optional, overload
 
 import vapoursynth as vs
-from lvsfunc import find_scene_changes
+from lvsfunc import clip_async_render, find_scene_changes
 from mvsfunc import ToYUV
 from vapoursynth import core
 from vardautomation import (
@@ -28,7 +29,7 @@ from vardautomation import (
 from vsdeband import Placebo, PlaceboDither
 from vskernels import Catrom, Kernel
 from vsmask.edge import MinMax
-from vstools import Matrix, depth, get_y, iterate
+from vstools import Matrix, depth, get_prop, get_y, iterate
 
 CURRENT_DIR = VPath(__file__).absolute().parent
 PREMUX_DIR = CURRENT_DIR / "Premux"
@@ -170,6 +171,32 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
     create_keyframes(output_final_f)
     logger.info("Cleaning up work files...")
     runner.work_files.clear()
+
+
+def generate_cambi_file(source: FileInfo, clip: vs.VideoNode | None = None):
+    if not hasattr(sys, "argv"):
+        raise RuntimeError("generate_cambi_file: please run this script from a command line")
+    stem = source.name_clip_output.stem
+    cambi_file = source.name_clip_output.with_name(f"{stem}_cambi.txt")
+    if clip is None:
+        clip = depth(source.clip_cut, 10)
+    if clip.format.color_family != vs.GRAY:
+        clip = get_y(clip)
+    f = clip[0]
+    if get_prop(f, "CAMBI", float | None, default=None) is None:
+        clip = core.akarin.Cambi(clip, scores=True)
+
+    cambi_scores: list[tuple[int, float]] = []
+
+    def _cambi_cb(n: int, f: vs.VideoFrame):
+        if (cam := get_prop(f, "CAMBI", float | None, default=None)) is not None and cam > 5:
+            cambi_scores.append((n, cam))
+
+    clip_async_render(clip, progress="Generating CAMBI scores", callback=_cambi_cb)
+    cambi_scores.sort(key=lambda x: x[0])
+    with cambi_file.open("w") as f:
+        for n, score in cambi_scores:
+            f.write(f"{n}: {score}\n")
 
 
 @overload
