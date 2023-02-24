@@ -14,4 +14,3 @@ The subtitles used for this encode can be found here: https://github.com/n4o-fan
   - 05: No close match, using personal screenshot
   - 06: Two version, one has the guitar case """cleaned"""
   - 08: Custom rain particles
-  - 12: Same with 05, using the sky because of the episode title.
