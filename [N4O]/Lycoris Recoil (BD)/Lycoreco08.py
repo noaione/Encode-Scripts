@@ -43,7 +43,9 @@ def filterchain(show_mask: bool = False) -> vs.VideoNode | tuple[vs.VideoNode, v
     filt_dehalo = fine_dehalo(filt_aa, rx=2, ry=1, darkstr=0.0)
 
     # medium degrain
-    filt_degrain0 = nao.adaptive_smdegrain(filt_dehalo, iter_edge=1, thSAD=95, thSADC=0, tr=2, RefineMotion=True)
+    filt_degrain0 = nao.adaptive_smdegrain(
+        filt_dehalo, iter_edge=1, thSAD=95, thSADC=0, tr=2, RefineMotion=True
+    )
     filt_degrain = nao.adaptive_smdegrain(
         filt_degrain0, iter_edge=1, thSAD=75, thSADC=0, tr=2, area="dark", RefineMotion=True
     )

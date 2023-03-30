@@ -14,7 +14,9 @@ src = core.std.Trim(src, 240, 34163).std.DuplicateFrames(15582).std.DuplicateFra
 # src3 = nao.src('Sewayaki no Kitsune Senko-san - 01 (Abema 1080p).mkv', depth=16)
 # src = core.fftspectrum.FFTSpectrum(src, True)
 
-descaled = nao.masked_descale(src, 1440, 810, "spline16", yuv444=True, expandN=4, masked=True, show_mask=False)
+descaled = nao.masked_descale(
+    src, 1440, 810, "spline16", yuv444=True, expandN=4, masked=True, show_mask=False
+)
 
 # @# OP #@#
 descale_format = core.register_format(

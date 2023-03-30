@@ -29,7 +29,9 @@ from vstools import depth, get_y, iterate
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.2" / "00002.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus])
+source = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.2" / "00002.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus]
+)
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
 source.name_file_final = VPath(CURRENT_DIR / f"{CURRENT_FILE.stem}_premux.mp4")
 source.set_name_clip_output_ext(".265")

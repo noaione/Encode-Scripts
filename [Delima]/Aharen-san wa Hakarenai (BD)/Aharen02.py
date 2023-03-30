@@ -29,7 +29,9 @@ from vstools import depth, get_y, iterate
 CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
-source = FileInfo(CURRENT_DIR / "BDMV" / "Vol.1" / "00001.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus])
+source = FileInfo(
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00001.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus]
+)
 source.name_clip_output = VPath(CURRENT_DIR / CURRENT_FILE.stem)
 source.name_file_final = VPath(CURRENT_DIR / f"{CURRENT_FILE.stem}_premux.mp4")
 source.set_name_clip_output_ext(".265")
@@ -46,7 +48,7 @@ def filterchain():
     # medium aa
     # filt_straa = upscaled_sraa(src, aafunc=Eedi3SR(mdis=40))
     filt_weakaa = transpose_aa(src, aafunc=Eedi3SR(nrad=2, gamma=60))
-    #filt_aaclamp = clamp_aa(src, filt_weakaa, filt_straa)
+    # filt_aaclamp = clamp_aa(src, filt_weakaa, filt_straa)
 
     # medium degrain
     filt_degrain = nao.adaptive_smdegrain(filt_weakaa, iter_edge=2, thSAD=60, thSADC=0, tr=2)
@@ -91,14 +93,13 @@ class FFMPegMatroska(MatroskaFile):
         return None
 
 
-
 if __name__ == "__main__":
     config = RunnerConfig(
         X265(CURRENT_DIR / "_settings.ini"),
         a_extracters=FFmpegAudioExtracter(source, track_in=1, track_out=1),
         a_cutters=EztrimCutter(source, track=1),
         a_encoders=OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=192, use_ffmpeg=False),
-        mkv=FFMPegMatroska.autotrack(source)
+        mkv=FFMPegMatroska.autotrack(source),
     )
 
     SelfRunner(dither_down(filterchain()), source, config).run()

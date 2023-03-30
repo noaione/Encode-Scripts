@@ -17,7 +17,9 @@ def compmask4(srcs, mask):
 
 wkn_sc = nao.src("01/Made in Abyss - Movie 01 (Wakanim SC 1080p).mkv", depth=16, trims=[0, -360])
 wkn_ru = nao.src(
-    "01/Gekijouban Soushuuhen Made in Abyss - 01 (WEB-DL 1920x1080 x264 AAC Rus).mkv", depth=16, trims=[0, -360]
+    "01/Gekijouban Soushuuhen Made in Abyss - 01 (WEB-DL 1920x1080 x264 AAC Rus).mkv",
+    depth=16,
+    trims=[0, -360],
 )
 amz_720p = nao.src("01/Made in Abyss - Movie 01 (Amazon dAnime VBR 720p).mkv", depth=16, trims=[0, -1])
 amz_1080p = core.resize.Spline36(amz_720p, 1920, 1080)

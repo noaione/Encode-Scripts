@@ -22,7 +22,9 @@ src_mask2 = kgf.hardsubmask_fades(src_dialog, funi)
 src = core.std.MaskedMerge(src_dialog, funi, src_mask2)
 
 # Nitpick
-src = fvf.rfs(src, wkn, "[0 3532] [4544 6016] [8217 8338] [8387 10206] [10609 17210] [17229 29643] [29817 33889]")
+src = fvf.rfs(
+    src, wkn, "[0 3532] [4544 6016] [8217 8338] [8387 10206] [10609 17210] [17229 29643] [29817 33889]"
+)
 src = fvf.rfs(
     src, src_dialog, "[0 3532] [4544 6016] [8217 8338] [8387 10206] [10609 17210] [17229 29643] [29817 33889]"
 )

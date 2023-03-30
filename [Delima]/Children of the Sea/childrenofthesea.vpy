@@ -15,7 +15,8 @@ vid = fvf.Depth(vid, 16)
 # ED Part #
 edc = vid[150623:156267]
 edc = core.sub.Subtitle(
-    edc, r"{\an7\fad(250,250)\pos(0,0)\c&H010001&\blur5\fscx100\fscy100\p1}m 1735 25 l 1903 25 1903 526 1735 526"
+    edc,
+    r"{\an7\fad(250,250)\pos(0,0)\c&H010001&\blur5\fscx100\fscy100\p1}m 1735 25 l 1903 25 1903 526 1735 526",
 )
 
 vid = insert_clip(vid, edc, 150623)

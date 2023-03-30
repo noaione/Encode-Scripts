@@ -13,7 +13,9 @@ src = nao.src("Sewayaki Kitsune no Senko-san - 02 (FUNimation 1080p).mkv", depth
 src = core.std.Trim(src, 240, 34166)  # s.std.DuplicateFrames(15582).std.DuplicateFrames(15582)
 # src2 = nao.src('Sewayaki Kitsune no Senko-san - 02 (AbemaTV 1080p).mkv', depth=16)
 
-descaled = nao.masked_descale(src, 1440, 810, "spline16", yuv444=True, expandN=4, masked=True, show_mask=False)
+descaled = nao.masked_descale(
+    src, 1440, 810, "spline16", yuv444=True, expandN=4, masked=True, show_mask=False
+)
 
 # stacked = core.std.StackVertical([src, src2])
 

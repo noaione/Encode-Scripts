@@ -28,13 +28,19 @@ CURRENT_DIR = Path(__file__).absolute().parent
 CURRENT_FILE = VPath(__file__)
 
 source_ncop = FileInfo(
-    CURRENT_DIR / "BDMV" / "Vol.1" / "00016.m2ts", trims_or_dfs=[(0, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00016.m2ts",
+    trims_or_dfs=[(0, -24)],
+    preset=[PresetBD, PresetOpus, PresetFLAC],
 )
 source_nced1 = FileInfo(
-    CURRENT_DIR / "BDMV" / "Vol.1" / "00017.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00017.m2ts",
+    trims_or_dfs=[(24, -24)],
+    preset=[PresetBD, PresetOpus, PresetFLAC],
 )
 source_nced2 = FileInfo(
-    CURRENT_DIR / "BDMV" / "Vol.1" / "00018.m2ts", trims_or_dfs=[(24, -24)], preset=[PresetBD, PresetOpus, PresetFLAC]
+    CURRENT_DIR / "BDMV" / "Vol.1" / "00018.m2ts",
+    trims_or_dfs=[(24, -24)],
+    preset=[PresetBD, PresetOpus, PresetFLAC],
 )
 source_ncop.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCOPv2")
 source_nced1.name_clip_output = VPath(CURRENT_DIR / "KunoichiNCED1v2")

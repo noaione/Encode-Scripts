@@ -26,13 +26,15 @@ ncop = depth(source_ncop.clip_cut, 16)
 # First num is the fade start
 # end num is before the next frame
 op_titles = (2856, 2945)
-endcard_start =  33927
+endcard_start = 33927
 
 # apply title mask
 optitle_dur = (op_titles[1] - op_titles[0]) + 1
-optitle_ref = src[op_titles[0]:op_titles[1] + 1]
+optitle_ref = src[op_titles[0] : op_titles[1] + 1]
 optitle_ncopref = ncop[2040:2130]
-optitle_mask = create_img_mask("bocchi02_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
+optitle_mask = (
+    create_img_mask("bocchi02_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
+)
 opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, optitle_ncopref, optitle_mask)
 src = insert_clip(src, opfreeze_titlemask, op_titles[0])
 
@@ -54,7 +56,9 @@ filt_dh = FineDehalo(filt_aa, rx=2, darkstr=0.0, brightstr=1.0)
 texmask = deband_texmask(src, rady=1, edge=28, edge_dilate=5)
 filt_dn1 = SMDegrain(filt_dh, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
 # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
-filt_dn_s = core.bm3dcuda.BM3D(depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2).bm3d.VAggregate(radius=2)
+filt_dn_s = core.bm3dcuda.BM3D(
+    depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2
+).bm3d.VAggregate(radius=2)
 filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
 
 # deband

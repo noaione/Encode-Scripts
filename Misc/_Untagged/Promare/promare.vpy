@@ -25,7 +25,9 @@ src_final = fvf.rfs(
 src_final = fvf.Depth(src, 16)
 
 sobel_edge = iterate(core.std.Sobel(get_y(src_final)), core.std.Inflate, 2).std.Invert()
-normal_deband = core.neo_f3kdb.Deband(src_final, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16)
+normal_deband = core.neo_f3kdb.Deband(
+    src_final, 12, 60, 55, 55, 15, 0, preset="medium/nograin", output_depth=16
+)
 
 vid = core.std.MaskedMerge(src_final, normal_deband, sobel_edge)
 vid = nao.adaptive_smdegrain(vid, luma_scaling=10, iter_edge=1, thSAD=100, thSADC=80)
