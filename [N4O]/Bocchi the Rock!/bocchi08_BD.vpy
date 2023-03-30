@@ -7,10 +7,10 @@ from stgfunc import adaptive_grain
 from vapoursynth import core
 from vardautomation import FileInfo
 from vsaa import Znedi3SR, transpose_aa
-from vstools import depth, get_y, insert_clip, join, split
+from vstools import depth, insert_clip
 
 from encode_common import (
-    create_img_mask,
+    CURRENT_DIR,
     deband_texmask,
     do_boccher,
     open_endcard,
@@ -18,29 +18,25 @@ from encode_common import (
 )
 
 current_file = Path(__file__)
-EPISODE_NO = 6
+EPISODE_NO = 8
 
-source = open_source("00004.m2ts", "3", current_file, trims=(None, -26))
-source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
+source = open_source("00004.m2ts", "4", current_file, trims=(None, -26))
+# source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
 
 
 def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
     src = depth(s0rs, 16)
-    ncop = depth(source_ncop.clip_cut, 16)
+    # ncop = depth(source_ncop.clip_cut, 16)
 
     # first num is the first frame where the title will show up
     # end num is before the next frame
-    op_titles = (9304, 9393)
+    # op_titles = (6021, 6110)
     # The first frame where the end card spin start
     endcard_start = 33926
 
-    # apply title mask
-    optitle_dur = (op_titles[1] - op_titles[0]) + 1
-    optitle_ref = src[op_titles[0]:op_titles[1] + 1]
-    optitle_ncopref = ncop[2040:2130]
-    optitle_mask = create_img_mask(f"bocchi{EPISODE_NO:02d}_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
-    opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, optitle_ncopref, optitle_mask)
-    src = insert_clip(src, opfreeze_titlemask, op_titles[0])
+    # apply title mask (the title mask is a moving thingamagic)
+    title_mask_file = CURRENT_DIR / "masks" / "bocchi08_title.ass"
+    src = core.sub.TextFile(src, str(title_mask_file))
 
     # swap out the original endcard with a custom endcard
     # the card is made in Aegisub, then exported as PNG

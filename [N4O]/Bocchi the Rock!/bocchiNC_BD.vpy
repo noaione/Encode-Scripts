@@ -7,7 +7,7 @@ from stgfunc import adaptive_grain
 from vapoursynth import core
 from vardautomation import FileInfo
 from vsaa import Znedi3SR, transpose_aa
-from vstools import depth
+from vstools import depth, get_y, join, split
 
 from encode_common import (
     deband_texmask,
@@ -32,10 +32,18 @@ def filterchain(source: FileInfo) -> vs.VideoNode:
     filt_dh = FineDehalo(filt_aa, rx=2, darkstr=0.0, brightstr=1.0)
     # medium denoise
     texmask = deband_texmask(src, rady=1, edge=28, edge_dilate=5)
-    filt_dn1 = SMDegrain(filt_dh, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
+    filt_yy, filt_uu, filt_vv = split(filt_dh)
+    filt_dny1 = SMDegrain(filt_yy, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
     # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
-    filt_dn_s = core.bm3dcuda.BM3D(depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2).bm3d.VAggregate(radius=2)
-    filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
+    filt_dny_s = core.bm3dcuda.BM3D(depth(filt_yy, 32), ref=depth(filt_dny1, 32), sigma=0.88, radius=2).bm3d.VAggregate(radius=2)
+    filt_dny = core.std.MaskedMerge(filt_dny_s, get_y(filt_dh), texmask)
+    # Weakly denoise chroma
+    filt_dnuv: list[vs.VideoNode] = []
+    for filt_uv in (filt_uu, filt_vv):
+        filt_dnuv.append(SMDegrain(filt_uv, tr=2, thSAD=80, thSADC=0, RefineMotion=True, prefilter=2))
+    # Merge back luma and chroma
+    filt_dn = join([filt_dny, *filt_dnuv], family=filt_dh.format.color_family)
+
 
     # deband
     filt_db_m = core.neo_f3kdb.Deband(filt_dn, range=18, y=36, cb=30, cr=30, grainy=0, grainc=0)

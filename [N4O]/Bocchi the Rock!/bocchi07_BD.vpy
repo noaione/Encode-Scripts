@@ -7,7 +7,7 @@ from stgfunc import adaptive_grain
 from vapoursynth import core
 from vardautomation import FileInfo
 from vsaa import Znedi3SR, transpose_aa
-from vstools import depth, get_y, insert_clip, join, split
+from vstools import depth, insert_clip
 
 from encode_common import (
     create_img_mask,
@@ -18,9 +18,9 @@ from encode_common import (
 )
 
 current_file = Path(__file__)
-EPISODE_NO = 6
+EPISODE_NO = 7
 
-source = open_source("00004.m2ts", "3", current_file, trims=(None, -26))
+source = open_source("00003.m2ts", "4", current_file, trims=(None, -26))
 source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
 
 
@@ -30,7 +30,7 @@ def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
 
     # first num is the first frame where the title will show up
     # end num is before the next frame
-    op_titles = (9304, 9393)
+    op_titles = (6021, 6110)
     # The first frame where the end card spin start
     endcard_start = 33926
 

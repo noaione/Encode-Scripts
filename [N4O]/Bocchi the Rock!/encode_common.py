@@ -1,8 +1,10 @@
+from enum import Enum
 import logging
 import sys
 import zlib
 from pathlib import Path
-from typing import Optional, overload
+from typing import Callable, Optional, overload
+from numpy import mat
 
 import vapoursynth as vs
 from lvsfunc import clip_async_render, find_scene_changes
@@ -10,6 +12,7 @@ from mvsfunc import ToYUV
 from vapoursynth import core
 from vardautomation import (
     X265,
+    AudioEncoder,
     AudioTrack,
     BitrateMode,
     EztrimCutter,
@@ -100,8 +103,8 @@ def _premux_exist(output_name: str, extension: str = ".mkv"):
     return multi_find[0]
 
 
-def create_keyframes(final: Path):
-    clip = core.lsmas.LWLibavSource(str(final))
+def create_keyframes(final: Path, clip: vs.VideoNode | None = None):
+    clip = clip or core.lsmas.LWLibavSource(str(final))
     keyframes = find_scene_changes(clip)
 
     kf_file = final.with_name(f"{final.stem}_keyframes.txt")
@@ -113,17 +116,18 @@ def create_keyframes(final: Path):
 
     # cleanup LWI
     cwd = Path.cwd()
-    print(f"Cleaning up LWI files in {cwd} and {CURRENT_DIR}")
-    for file in cwd.glob("*.lwi"):
-        if final.stem in file.stem:
-            file.unlink(missing_ok=True)
+    if clip is None:
+        print(f"Cleaning up LWI files in {cwd} and {CURRENT_DIR}")
+        for file in cwd.glob("*.lwi"):
+            if final.stem in file.stem:
+                file.unlink(missing_ok=True)
 
-    for file in CURRENT_DIR.glob("*.lwi"):
-        if final.stem in file.stem:
-            file.unlink(missing_ok=True)
+        for file in CURRENT_DIR.glob("*.lwi"):
+            if final.stem in file.stem:
+                file.unlink(missing_ok=True)
 
 
-def start_encode(source: FileInfo, clip: vs.VideoNode):
+def start_encode(source: FileInfo, clip: vs.VideoNode, *, audio_encoder: AudioEncoder | None = None):
     file_final = f"{source.name_clip_output.stem.lower()}_premux.mkv"
     output_final = PREMUX_DIR / file_final
     actual_premux = _premux_exist(source.name_clip_output.stem)
@@ -145,7 +149,7 @@ def start_encode(source: FileInfo, clip: vs.VideoNode):
         X265(CURRENT_DIR / "_settings.ini"),
         a_extracters=FFmpegAudioExtracter(source, track_in=1, track_out=1),
         a_cutters=EztrimCutter(source, track=1),
-        a_encoders=OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=224),
+        a_encoders=audio_encoder or OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=224),
         mkv=mkv_meta,
     )
     if clip.format.bits_per_sample < 10:
@@ -326,3 +330,44 @@ def create_img_mask(img_name: str, ref: vs.VideoNode, length: int = 1, inflate: 
     img_mask = open_image(mask_path, ref)
     img_mask = iterate(get_y(img_mask), core.std.Inflate, inflate)
     return img_mask * length
+
+
+class Boccher(Enum):
+    ENCODE = 1
+    KEYFRAME = 2
+    CAMBI = 3
+
+
+def boccher_mode() -> Boccher:
+    try:
+        mode = sys.argv[1]
+    except IndexError:
+        return Boccher.ENCODE
+    
+    mode = mode.lower()
+    match mode:
+        case "keyframe" | "kf" | "keyframes":
+            return Boccher.KEYFRAME
+        case "cambi" | "banding":
+            return Boccher.CAMBI
+        case _:
+            return Boccher.ENCODE
+
+
+def do_boccher(source: FileInfo, filterchain: Callable[[vs.VideoNode, FileInfo], vs.VideoNode]):
+    boccher = boccher_mode()
+
+    generate_to = PREMUX_DIR / source.name_clip_output
+    match boccher:
+        case Boccher.ENCODE:
+            print("Making boccher...")
+            start_encode(source, filterchain(source.clip_cut, source))
+        case Boccher.KEYFRAME:
+            print("Generating keyframes")
+            filepath = generate_to.with_suffix(".keyframes.txt")
+            create_keyframes(filepath, source.clip_cut)
+        case Boccher.CAMBI:
+            print("Doing CAMBI shit")
+            generate_cambi_file(source)
+        case _:
+            print("Invalid boccher mode")
