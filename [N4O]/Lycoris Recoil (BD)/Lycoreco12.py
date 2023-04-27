@@ -7,7 +7,8 @@ from encode_common import deband_texmask, open_source, start_encode
 from finedehalo import fine_dehalo
 from stgfunc import adaptive_grain
 from vapoursynth import core
-from vsaa import Nnedi3SR, fine_aa
+from vsaa import fine_aa
+from vsaa.antialiasers.nnedi3 import Nnedi3SR
 from vstools import depth
 
 CURRENT_DIR = Path(__file__).absolute().parent
