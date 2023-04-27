@@ -50,9 +50,7 @@ def open_source(
     if name.endswith(".m2ts"):
         name = name[:-5]
     source = FileInfo(
-        CURRENT_DIR / "BDMV" / f"Vol.{vol}" / f"{name}.m2ts",
-        trims_or_dfs=trims,
-        preset=[PresetBD, PresetOpus],
+        CURRENT_DIR / "BDMV" / f"Vol.{vol}" / f"{name}.m2ts", trims_or_dfs=trims, preset=[PresetBD, PresetOpus]
     )
     source.name_clip_output = VPath(CURRENT_DIR / output_file.stem)
     source.set_name_clip_output_ext(".265")
@@ -136,9 +134,7 @@ def start_encode(source: FileInfo, clip: vs.VideoNode, *, audio_encoder: AudioEn
         create_keyframes(actual_premux)
         return
     mkv_tracks: list[Track] = [
-        VideoTrack(
-            source.name_clip_output, "Video diolah oleh Suami Nijika-chan | x265 10bit", Lang.make("ja")
-        )
+        VideoTrack(source.name_clip_output, "Video diolah oleh Suami Nijika-chan | x265 10bit", Lang.make("ja"))
     ]
     if source.a_enc_cut is not None:
         mkv_tracks.append(AudioTrack(source.a_enc_cut.set_track(1), "Japanese OPUS 2.0", Lang.make("ja")))
@@ -217,9 +213,7 @@ def LevelsM(
     ...
 
 
-def LevelsM(
-    clip: vs.VideoNode, points: list[float | int], levels: list[int], xpass=[0, "peak"], return_expr=False
-):
+def LevelsM(clip: vs.VideoNode, points: list[float | int], levels: list[int], xpass=[0, "peak"], return_expr=False):
     # https://github.com/Moelancholy/Encode-Scripts/blob/master/Pizza/Urusei%20Yatsura%20(2022)/UY22_09.vpy#L74
     qm = len(points)
     peak = [(1 << clip.format.bits_per_sample) - 1, 1][clip.format.sample_type]
@@ -236,7 +230,9 @@ def LevelsM(
         if levels[x] == levels[x + 1]:
             expr += f" {peak * levels[x]} "
         else:
-            expr += f" x {points[x]} - {peak * (levels[x+1] - levels[x])/(points[x+1] - points[x])} * {peak * levels[x]} + "  # noqa: E501
+            expr += (
+                f" x {points[x]} - {peak * (levels[x+1] - levels[x])/(points[x+1] - points[x])} * {peak * levels[x]} + "
+            )
 
     for _ in range(qm):
         expr += " ? "
@@ -262,11 +258,7 @@ def texture_mask(clip: vs.VideoNode, range: int) -> vs.VideoNode:
     em_lo = iterate(em_lo, vs.core.std.Minimum, 2)
     rm_txt = vs.core.std.Expr([rmask, em_hi, em_me, em_lo], "x y z a min min min")
     weighted = LevelsM(
-        rm_txt,
-        points=[x * 256 for x in (1.75, 2.5, 5, 10)],
-        levels=[0, 1, 1, 0],
-        xpass=[0, 0],
-        return_expr=False,
+        rm_txt, points=[x * 256 for x in (1.75, 2.5, 5, 10)], levels=[0, 1, 1, 0], xpass=[0, 0], return_expr=False
     )
 
     masked = weighted.std.BoxBlur(hradius=8, vradius=8).std.Expr(f"x {65535 * 0.2} - {1 / (1 - 0.2)} *")
@@ -276,13 +268,7 @@ def texture_mask(clip: vs.VideoNode, range: int) -> vs.VideoNode:
 def deband_texmask(clip: vs.VideoNode, rady: int = 2, edge: int = 30, edge_dilate: int = 6) -> vs.VideoNode:
     clip_y = get_y(clip)
     tex_mask = texture_mask(clip_y, rady)
-    edgem = (
-        core.std.Prewitt(clip_y)
-        .std.Binarize(edge << 7)
-        .std.Deflate()
-        .std.Inflate()
-        .morpho.Close(size=edge_dilate)
-    )
+    edgem = core.std.Prewitt(clip_y).std.Binarize(edge << 7).std.Deflate().std.Inflate().morpho.Close(size=edge_dilate)
     edgem = core.rgvs.RemoveGrain(edgem, 17)
     return core.std.Expr([tex_mask, edgem], "x y +").rgvs.RemoveGrain(17)
 

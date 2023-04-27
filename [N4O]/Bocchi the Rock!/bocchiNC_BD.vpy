@@ -6,7 +6,8 @@ from havsfunc import FineDehalo, SMDegrain
 from stgfunc import adaptive_grain
 from vapoursynth import core
 from vardautomation import FileInfo
-from vsaa import Znedi3SR, transpose_aa
+from vsaa import transpose_aa
+from vsaa.antialiasers.znedi3 import Znedi3SR
 from vstools import depth, get_y, join, split
 
 from encode_common import (
@@ -35,9 +36,9 @@ def filterchain(source: FileInfo) -> vs.VideoNode:
     filt_yy, filt_uu, filt_vv = split(filt_dh)
     filt_dny1 = SMDegrain(filt_yy, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
     # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
-    filt_dny_s = core.bm3dcuda.BM3D(
-        depth(filt_yy, 32), ref=depth(filt_dny1, 32), sigma=0.88, radius=2
-    ).bm3d.VAggregate(radius=2)
+    filt_dny_s = core.bm3dcuda.BM3D(depth(filt_yy, 32), ref=depth(filt_dny1, 32), sigma=0.88, radius=2).bm3d.VAggregate(
+        radius=2
+    )
     filt_dny = core.std.MaskedMerge(filt_dny_s, get_y(filt_dh), texmask)
     # Weakly denoise chroma
     filt_dnuv: list[vs.VideoNode] = []

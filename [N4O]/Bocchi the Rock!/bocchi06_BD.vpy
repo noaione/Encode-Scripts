@@ -6,8 +6,9 @@ from havsfunc import FineDehalo, SMDegrain
 from stgfunc import adaptive_grain
 from vapoursynth import core
 from vardautomation import FileInfo
-from vsaa import Znedi3SR, transpose_aa
-from vstools import depth, get_y, insert_clip, join, split
+from vsaa import transpose_aa
+from vsaa.antialiasers.znedi3 import Znedi3SR
+from vstools import depth, insert_clip
 
 from encode_common import (
     create_img_mask,
@@ -64,9 +65,9 @@ def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
     texmask = deband_texmask(src, rady=1, edge=28, edge_dilate=5)
     filt_dn1 = SMDegrain(filt_dh, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
     # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
-    filt_dn_s = core.bm3dcuda.BM3D(
-        depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2
-    ).bm3d.VAggregate(radius=2)
+    filt_dn_s = core.bm3dcuda.BM3D(depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2).bm3d.VAggregate(
+        radius=2
+    )
     filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
 
     # deband

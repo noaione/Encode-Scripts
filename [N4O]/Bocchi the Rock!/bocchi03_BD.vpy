@@ -5,7 +5,8 @@ import vapoursynth as vs
 from havsfunc import FineDehalo, SMDegrain
 from stgfunc import adaptive_grain
 from vapoursynth import core
-from vsaa import Znedi3SR, transpose_aa
+from vsaa import transpose_aa
+from vsaa.antialiasers.znedi3 import Znedi3SR
 from vstools import depth, insert_clip
 
 from encode_common import (
@@ -32,9 +33,7 @@ endcard_start = 33925
 optitle_dur = (op_titles[1] - op_titles[0]) + 1
 optitle_ref = src[op_titles[0] : op_titles[1] + 1]
 optitle_ncopref = ncop[2040:2130]
-optitle_mask = (
-    create_img_mask("bocchi03_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
-)
+optitle_mask = create_img_mask("bocchi03_title.png", src, optitle_dur).std.Binarize().std.BoxBlur(hradius=1, vradius=1)
 opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, optitle_ncopref, optitle_mask)
 src = insert_clip(src, opfreeze_titlemask, op_titles[0])
 
@@ -56,9 +55,9 @@ filt_dh = FineDehalo(filt_aa, rx=2, darkstr=0.0, brightstr=1.0)
 texmask = deband_texmask(src, rady=1, edge=28, edge_dilate=5)
 filt_dn1 = SMDegrain(filt_dh, tr=2, thSAD=180, thSADC=0, RefineMotion=True, prefilter=2)
 # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
-filt_dn_s = core.bm3dcuda.BM3D(
-    depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2
-).bm3d.VAggregate(radius=2)
+filt_dn_s = core.bm3dcuda.BM3D(depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2).bm3d.VAggregate(
+    radius=2
+)
 filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
 
 # deband
@@ -83,5 +82,5 @@ else:
     )
     nao.debug_clip(src, f"Source\n{_DEFAULT_DEBUG_FORMAT}").set_output()
     nao.debug_clip(source.clip_cut, f"Original\n{_DEFAULT_DEBUG_FORMAT}").set_output(1)
-    nao.debug_clip(filt_gg, f"Filtered\{_DEFAULT_DEBUG_FORMAT}").set_output(2)
+    nao.debug_clip(filt_gg, f"Filtered\n{_DEFAULT_DEBUG_FORMAT}").set_output(2)
     # filt_gg.set_output(1)
