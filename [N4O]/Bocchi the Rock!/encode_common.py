@@ -141,8 +141,10 @@ def start_encode(source: FileInfo, clip: vs.VideoNode, *, audio_encoder: AudioEn
     mkv_meta = MatroskaFile(output_final, mkv_tracks)
     logger.info("Preparing runner...")
     logger.info(f"Output file: {output_final}")
+    ENCODER = X265(CURRENT_DIR / "_settings.ini")
+    ENCODER.resumable = True
     config = RunnerConfig(
-        X265(CURRENT_DIR / "_settings.ini"),
+        v_encoder=ENCODER,
         a_extracters=FFmpegAudioExtracter(source, track_in=1, track_out=1),
         a_cutters=EztrimCutter(source, track=1),
         a_encoders=audio_encoder or OpusEncoder(source, track=1, mode=BitrateMode.VBR, bitrate=224),
