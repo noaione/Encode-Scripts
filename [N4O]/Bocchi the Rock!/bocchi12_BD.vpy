@@ -14,47 +14,61 @@ from encode_common import (
     create_img_mask,
     deband_texmask,
     do_boccher,
-    open_endcard,
+    open_image,
     open_source,
+    open_web_source,
 )
 
 current_file = Path(__file__)
-EPISODE_NO = 10
+CURRENT_DIR = current_file.absolute().parent
+EPISODE_NO = 12
 
-source = open_source("00004.m2ts", "5", current_file, trims=(None, -24))
-source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
+source = open_source("00004.m2ts", "6", current_file, trims=(None, -24))
+source_web = open_web_source("[SubsPlease] Bocchi the Rock! - 12 (1080p) [CA5333CB].mkv", current_file)
 
 
-def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
-    src = depth(s0rs, 16)
-    ncop = depth(source_ncop.clip_cut, 16)
-
-    # first num is the first frame where the title will show up
-    # end num is before the next frame
-    op_titles = (5565, 5654)
-    # The first frame where the end card spin start
-    endcard_start = 33928
-
-    # apply title mask
-    optitle_dur = (op_titles[1] - op_titles[0]) + 1
-    optitle_ref = src[op_titles[0] : op_titles[1] + 1]
-    optitle_ncopref = ncop[2040:2130]
+def _handle_op_title(src: vs.VideoNode, op_titles: tuple[tuple[int, int], tuple[int, int]]):
+    crowd_timing, blue_sky_timing = op_titles
     optitle_mask = (
-        create_img_mask(f"bocchi{EPISODE_NO:02d}_title.png", src, optitle_dur)
+        create_img_mask(f"bocchi{EPISODE_NO:02d}_title.png", src)
         .std.Binarize()
         .std.BoxBlur(hradius=1, vradius=1)
     )
-    opfreeze_titlemask = core.std.MaskedMerge(optitle_ref, optitle_ncopref, optitle_mask)
-    src = insert_clip(src, opfreeze_titlemask, op_titles[0])
 
-    # swap out the original endcard with a custom endcard
-    # the card is made in Aegisub, then exported as PNG
-    # after that it got slapped to a *close enough* background like the original
-    # that are taken from next episode which are cleaned out and desaturated.
-    # then I use premiere pro to make a lossless spinning animation because
-    # i'm too stupid to do it in Aegisub and I hate math.
-    src_endcard = open_endcard(EPISODE_NO + 1, src, src.num_frames - endcard_start, ext_fmt="mp4")
-    src = insert_clip(src, src_endcard, endcard_start)
+    # --> crowd handler
+    crowd_dur = (crowd_timing[1] - crowd_timing[0]) + 1
+    crowd_ref = src[crowd_timing[0] : crowd_timing[1] + 1]
+    crowd_ff = src[crowd_timing[0]] * crowd_dur
+    crowd_mask = optitle_mask * crowd_dur
+    crowd_titlemask = core.std.MaskedMerge(crowd_ref, crowd_ff, crowd_mask)
+    out_masked = insert_clip(src, crowd_titlemask, crowd_timing[0])
+    # <--
+
+    # --> blue sky handler
+    bsky_dur = (blue_sky_timing[1] - blue_sky_timing[0]) + 1
+    bsky_ref = src[blue_sky_timing[0] : blue_sky_timing[1] + 1]
+    bsky_swap = open_image(CURRENT_DIR / "masks" / "bocchi12_titlesky.png", src) * bsky_dur
+    bsky_mask = optitle_mask * bsky_dur
+    bsky_titlemask = core.std.MaskedMerge(bsky_ref, bsky_swap, bsky_mask)
+    out_masked = insert_clip(out_masked, bsky_titlemask, blue_sky_timing[0])
+    # <-- blue sky handler
+
+    return out_masked
+
+
+def boccher_chain(s0rs: vs.VideoNode, _: FileInfo, test_only: bool = False):
+    src = depth(s0rs, 16)
+
+    # first num is the first frame where the title will show up
+    # end num is before the next frame
+    op_titles = ((3296, 3391), (3392, 3465))
+
+    # apply title mask
+    src = _handle_op_title(src, op_titles)
+
+    if test_only:
+        # Return only the masked title and spliced endcard
+        return src
 
     # light AA
     filt_aa = transpose_aa(src, Znedi3SR(4, 1))
@@ -67,9 +81,7 @@ def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
     # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
     filt_dn_s = core.bm3dcuda.BM3D(
         depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2
-    ).bm3d.VAggregate(
-        radius=2
-    )
+    ).bm3d.VAggregate(radius=2)
     filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
 
     # deband
@@ -96,7 +108,8 @@ else:
     )
     clippy = [
         ("Source", source.clip_cut),
-        ("Filtered", boccher_chain(source.clip_cut, source)),
+        ("Source (WEB)", source_web.clip_cut),
+        ("Pre-Filtered", boccher_chain(source.clip_cut, source, True)),
     ]  # , ("Original", source.clip_cut)]
     for i, (name, clip) in enumerate(clippy):
         nao.debug_clip(clip, f"{name}\n{_DEFAULT_DEBUG_FORMAT}").set_output(i)

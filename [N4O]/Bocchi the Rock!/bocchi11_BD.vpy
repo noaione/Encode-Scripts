@@ -16,24 +16,26 @@ from encode_common import (
     do_boccher,
     open_endcard,
     open_source,
+    open_web_source,
 )
 
 current_file = Path(__file__)
-EPISODE_NO = 10
+EPISODE_NO = 11
 
-source = open_source("00004.m2ts", "5", current_file, trims=(None, -24))
+source = open_source("00003.m2ts", "6", current_file, trims=(None, -26))
 source_ncop = open_source("00004.m2ts", "0", current_file, trims=(24, -27))
+source_web = open_web_source("[SubsPlease] Bocchi the Rock! - 11 (1080p) [7AFE89C1].mkv", current_file)
 
 
-def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
+def boccher_chain(s0rs: vs.VideoNode, _: FileInfo, test_only: bool = False):
     src = depth(s0rs, 16)
     ncop = depth(source_ncop.clip_cut, 16)
 
     # first num is the first frame where the title will show up
     # end num is before the next frame
-    op_titles = (5565, 5654)
+    op_titles = (6499, 6588)
     # The first frame where the end card spin start
-    endcard_start = 33928
+    endcard_start = 33926
 
     # apply title mask
     optitle_dur = (op_titles[1] - op_titles[0]) + 1
@@ -56,6 +58,10 @@ def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
     src_endcard = open_endcard(EPISODE_NO + 1, src, src.num_frames - endcard_start, ext_fmt="mp4")
     src = insert_clip(src, src_endcard, endcard_start)
 
+    if test_only:
+        # Return only the masked title and spliced endcard
+        return src
+
     # light AA
     filt_aa = transpose_aa(src, Znedi3SR(4, 1))
 
@@ -67,9 +73,7 @@ def boccher_chain(s0rs: vs.VideoNode, _: FileInfo):
     # filt_dn = core.std.MaskedMerge(filt_dn_1, filt_dh, texmask)
     filt_dn_s = core.bm3dcuda.BM3D(
         depth(filt_dh, 32), ref=depth(filt_dn1, 32), sigma=0.88, radius=2
-    ).bm3d.VAggregate(
-        radius=2
-    )
+    ).bm3d.VAggregate(radius=2)
     filt_dn = core.std.MaskedMerge(filt_dn_s, filt_dh, texmask)
 
     # deband
@@ -96,7 +100,8 @@ else:
     )
     clippy = [
         ("Source", source.clip_cut),
-        ("Filtered", boccher_chain(source.clip_cut, source)),
+        ("Source (WEB)", source_web.clip_cut),
+        ("Pre-Filtered", boccher_chain(source.clip_cut, source, True)),
     ]  # , ("Original", source.clip_cut)]
     for i, (name, clip) in enumerate(clippy):
         nao.debug_clip(clip, f"{name}\n{_DEFAULT_DEBUG_FORMAT}").set_output(i)
