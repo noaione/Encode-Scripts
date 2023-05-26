@@ -23,7 +23,7 @@ current_file = Path(__file__)
 CURRENT_DIR = current_file.absolute().parent
 EPISODE_NO = 12
 
-source = open_source("00004.m2ts", "6", current_file, trims=(None, -24))
+source = open_source("00004.m2ts", "6", current_file, trims=(None, -26))
 source_web = open_web_source("[SubsPlease] Bocchi the Rock! - 12 (1080p) [CA5333CB].mkv", current_file)
 
 
