@@ -56,10 +56,10 @@ clip = core.resize.Bicubic(
 )
 clip = core.std.SetFrameProps(
     clip,
-    _ColorRange=0,  # Full range
-    _Matrix=0,      # RGB / identity
-    _Transfer=1,    # Rec.709
-    _Primaries=1,   # Rec.709
+    _Range=0,     # Full range
+    _Matrix=0,    # RGB / identity
+    _Transfer=1,  # Rec.709
+    _Primaries=1, # Rec.709
 )
 
 clip = core.timecube.Cube(clip, LUT_FILE, range=1, interp=1, cpu=3)
@@ -113,7 +113,7 @@ output = depth(
     range_in=Range.FULL,
     range_out=Range.FULL,
     dither_type=DitherType.SIERRA_2_4A,
-).std.GPUUpload()
+)
 
 output.set_output(0)
 # set_output(final, "Final")
