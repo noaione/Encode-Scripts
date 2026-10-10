@@ -1,9 +1,9 @@
-vspipe.exe -c y4m boane-final.vpy - | .\x265.exe --y4m - `
-  --output boane-test.hevc `
+vspipe.exe -c y4m boane.vpy - | .\x265.exe --y4m - `
+  --output boane-full.hevc `
   --preset veryslow `
   --range limited `
   --crf 13 --qcomp 0.70 --qg-size 32 `
-  --rc-grain --no-cutree --aq-mode 3 --aq-strength 0.70 `
+  --no-rc-grain --no-cutree --aq-mode 3 --aq-strength 0.70 `
   --psy-rd 2.0 --psy-rdoq 1.5 `
   --deblock=-1:-1 --no-sao --no-strong-intra-smoothing `
   --tu-inter-depth 3 --tu-intra-depth 3 `
@@ -13,6 +13,6 @@ vspipe.exe -c y4m boane-final.vpy - | .\x265.exe --y4m - `
   --bframes 8 --b-adapt 2 --scenecut 0 --hist-scenecut --rc-lookahead 60 `
   --cbqpoffs 2 --crqpoffs 2 --ipratio 1.30 --pbratio 1.20 `
   --no-open-gop --min-keyint 24 --keyint 240 `
-  --high-tier --level-idc 50 --frame-threads 3 --pools 12 `
+  --high-tier --level-idc 0 --frame-threads 3 --pools 12 `
   --colorprim bt709 --transfer bt709 --colormatrix bt709 --range limited `
-  --info --no-progress
+  --info --no-psnr --no-ssim --no-pmode --no-pme
